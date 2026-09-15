@@ -3,8 +3,10 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
+import requests
+
 from utils.adme_predictor import AdmePredictor, build_fallback_prediction, normalize_api_prediction
-from utils.export import export_markdown
+from utils.export import export_csv_bytes, export_markdown
 
 
 DESCRIPTORS = {
@@ -60,6 +62,37 @@ class AdmeUtilityTests(unittest.TestCase):
         self.assertIn("# ADME Prediction Report", report)
         self.assertIn("## Molecular Descriptors", report)
         self.assertIn("## ADME Predictions", report)
+
+    def test_export_csv_uses_single_normalized_table(self) -> None:
+        predictions = build_fallback_prediction("CCO", DESCRIPTORS)
+        csv_text = export_csv_bytes("CCO", DESCRIPTORS, predictions).decode("utf-8")
+
+        self.assertIn("smiles,record_type,category,metric,value", csv_text.splitlines()[0])
+        self.assertIn("CCO,descriptor,molecular_descriptor,molecular_weight,180.159", csv_text)
+
+    def test_predict_warns_on_request_failure(self) -> None:
+        with (
+            patch("utils.adme_predictor.validate_smiles", return_value=(True, "")),
+            patch("utils.adme_predictor.calculate_descriptors", return_value=DESCRIPTORS),
+            patch.object(AdmePredictor, "_call_api", side_effect=requests.RequestException("boom")),
+        ):
+            result = AdmePredictor(api_url="https://example.test").predict("CCO")
+
+        self.assertEqual(result.source, "Descriptor-based fallback")
+        self.assertTrue(result.warnings)
+        self.assertIn("request failed", result.warnings[0].lower())
+
+    def test_predict_warns_on_parse_failure(self) -> None:
+        with (
+            patch("utils.adme_predictor.validate_smiles", return_value=(True, "")),
+            patch("utils.adme_predictor.calculate_descriptors", return_value=DESCRIPTORS),
+            patch.object(AdmePredictor, "_call_api", side_effect=ValueError("bad payload")),
+        ):
+            result = AdmePredictor(api_url="https://example.test").predict("CCO")
+
+        self.assertEqual(result.source, "Descriptor-based fallback")
+        self.assertTrue(result.warnings)
+        self.assertIn("could not parse", result.warnings[0].lower())
 
 
 if __name__ == "__main__":

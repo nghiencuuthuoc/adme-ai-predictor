@@ -28,11 +28,35 @@ def descriptors_frame(descriptors: dict[str, float]) -> pd.DataFrame:
     )
 
 
-def export_csv_bytes(descriptors: dict[str, float], predictions: dict[str, Any]) -> bytes:
+def build_export_frame(smiles: str, descriptors: dict[str, float], predictions: dict[str, Any]) -> pd.DataFrame:
+    rows = [
+        {
+            "smiles": smiles,
+            "record_type": "descriptor",
+            "category": "molecular_descriptor",
+            "metric": key,
+            "value": value,
+        }
+        for key, value in descriptors.items()
+    ]
+    rows.extend(
+        {
+            "smiles": smiles,
+            "record_type": "prediction",
+            "category": category,
+            "metric": metric,
+            "value": value,
+        }
+        for category, values in predictions.items()
+        if isinstance(values, dict)
+        for metric, value in values.items()
+    )
+    return pd.DataFrame(rows)
+
+
+def export_csv_bytes(smiles: str, descriptors: dict[str, float], predictions: dict[str, Any]) -> bytes:
     output = io.StringIO()
-    flatten_predictions(predictions).to_csv(output, index=False)
-    output.write("\n")
-    descriptors_frame(descriptors).to_csv(output, index=False)
+    build_export_frame(smiles, descriptors, predictions).to_csv(output, index=False)
     return output.getvalue().encode("utf-8")
 
 

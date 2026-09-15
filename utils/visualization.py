@@ -39,6 +39,7 @@ def build_distribution_chart(predictions: dict[str, Any]):
 
 def build_radar_chart(descriptors: dict[str, float], predictions: dict[str, Any]):
     _, go = _plotly()
+    molecular_weight = float(descriptors.get("molecular_weight", 0))
     likeness = predictions.get("drug_likeness", {})
     categories = [
         "Bioavailability",
@@ -65,7 +66,7 @@ def build_radar_chart(descriptors: dict[str, float], predictions: dict[str, Any]
             )
         ],
         layout=go.Layout(
-            title=f"ADME Radar Profile (MW {descriptors['molecular_weight']:.1f})",
+            title=f"ADME Radar Profile (MW {molecular_weight:.1f})",
             polar={"radialaxis": {"visible": True, "range": [0, 1]}},
         ),
     )

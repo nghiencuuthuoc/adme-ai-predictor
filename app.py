@@ -56,7 +56,7 @@ def render_prediction_tables(descriptors: dict[str, float], predictions: dict) -
 
 def render_downloads(smiles: str, descriptors: dict[str, float], predictions: dict, source: str) -> None:
     st.subheader("Export results")
-    csv_bytes = export_csv_bytes(descriptors, predictions)
+    csv_bytes = export_csv_bytes(smiles, descriptors, predictions)
     xlsx_bytes = export_excel_bytes(smiles, descriptors, predictions)
     markdown_text = export_markdown(smiles, descriptors, predictions, source)
 
