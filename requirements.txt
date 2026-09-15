@@ -1,0 +1,9 @@
+streamlit>=1.59.2
+rdkit
+pandas
+plotly
+matplotlib
+openpyxl
+requests
+python-dotenv
+tabulate
