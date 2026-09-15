@@ -150,7 +150,9 @@ class AdmePredictor:
                 warnings.append("API response did not include normalized ADME sections; using descriptor-based fallback values.")
         except requests.RequestException as exc:
             warnings.append(f"ADME-AI API request failed: {exc}. Descriptor-based fallback predictions were generated instead.")
-        except (ValueError, json.JSONDecodeError) as exc:
+        except json.JSONDecodeError as exc:
+            warnings.append(f"Could not parse ADME-AI API response: {exc}. Descriptor-based fallback predictions were generated instead.")
+        except ValueError as exc:
             warnings.append(f"Could not parse ADME-AI API response: {exc}. Descriptor-based fallback predictions were generated instead.")
 
         fallback_predictions = build_fallback_prediction(descriptors)
