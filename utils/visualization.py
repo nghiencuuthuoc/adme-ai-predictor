@@ -18,7 +18,9 @@ def build_prediction_frame(predictions: dict[str, Any]) -> pd.DataFrame:
         if not isinstance(values, dict):
             continue
         for metric, value in values.items():
-            if isinstance(value, (int, float, bool)):
+            if isinstance(value, bool):
+                continue
+            if isinstance(value, (int, float)):
                 records.append(
                     {
                         "category": category.replace("_", " ").title(),

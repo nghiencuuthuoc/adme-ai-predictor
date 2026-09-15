@@ -25,7 +25,7 @@ DESCRIPTORS = {
 
 class AdmeUtilityTests(unittest.TestCase):
     def test_build_fallback_prediction_has_required_sections(self) -> None:
-        result = build_fallback_prediction("CCO", DESCRIPTORS)
+        result = build_fallback_prediction(DESCRIPTORS)
 
         self.assertIn("absorption", result)
         self.assertIn("distribution", result)
@@ -56,7 +56,7 @@ class AdmeUtilityTests(unittest.TestCase):
         self.assertEqual(list(result.predictions)[0], "absorption")
 
     def test_export_markdown_contains_sections(self) -> None:
-        predictions = build_fallback_prediction("CCO", DESCRIPTORS)
+        predictions = build_fallback_prediction(DESCRIPTORS)
         report = export_markdown("CCO", DESCRIPTORS, predictions, "Descriptor-based fallback")
 
         self.assertIn("# ADME Prediction Report", report)
@@ -64,7 +64,7 @@ class AdmeUtilityTests(unittest.TestCase):
         self.assertIn("## ADME Predictions", report)
 
     def test_export_csv_uses_single_normalized_table(self) -> None:
-        predictions = build_fallback_prediction("CCO", DESCRIPTORS)
+        predictions = build_fallback_prediction(DESCRIPTORS)
         csv_text = export_csv_bytes("CCO", DESCRIPTORS, predictions).decode("utf-8")
 
         self.assertIn("smiles,record_type,category,metric,value", csv_text.splitlines()[0])
@@ -93,6 +93,21 @@ class AdmeUtilityTests(unittest.TestCase):
         self.assertEqual(result.source, "Descriptor-based fallback")
         self.assertTrue(result.warnings)
         self.assertIn("could not parse", result.warnings[0].lower())
+
+    def test_predict_keeps_extra_api_only_sections_at_the_end(self) -> None:
+        with (
+            patch("utils.adme_predictor.validate_smiles", return_value=(True, "")),
+            patch("utils.adme_predictor.calculate_descriptors", return_value=DESCRIPTORS),
+            patch.object(
+                AdmePredictor,
+                "_call_api",
+                return_value={"absorption": {"bioavailability_score": 0.88}, "custom_section": {"score": 0.5}},
+            ),
+        ):
+            result = AdmePredictor(api_url="https://example.test").predict("CCO")
+
+        self.assertIn("custom_section", result.predictions)
+        self.assertEqual(list(result.predictions)[-1], "custom_section")
 
 
 if __name__ == "__main__":

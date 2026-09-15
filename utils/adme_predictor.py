@@ -16,7 +16,7 @@ def _clamp(value: float, lower: float = 0.0, upper: float = 1.0) -> float:
     return max(lower, min(upper, value))
 
 
-def build_fallback_prediction(smiles: str, descriptors: dict[str, float]) -> dict[str, Any]:
+def build_fallback_prediction(descriptors: dict[str, float]) -> dict[str, Any]:
     mw = descriptors["molecular_weight"]
     logp = descriptors["logp"]
     tpsa = descriptors["tpsa"]
@@ -101,6 +101,12 @@ def normalize_api_prediction(payload: dict[str, Any]) -> dict[str, Any]:
         if isinstance(section_data, dict) and section_data:
             normalized[section] = section_data
 
+    for section, section_data in payload.items():
+        if section in normalized or section == "predictions":
+            continue
+        if isinstance(section_data, dict) and section_data:
+            normalized[section] = section_data
+
     if normalized:
         return normalized
 
@@ -147,7 +153,7 @@ class AdmePredictor:
         except (ValueError, json.JSONDecodeError) as exc:
             warnings.append(f"Could not parse ADME-AI API response: {exc}. Descriptor-based fallback predictions were generated instead.")
 
-        fallback_predictions = build_fallback_prediction(smiles, descriptors)
+        fallback_predictions = build_fallback_prediction(descriptors)
         ordered_sections = list(fallback_predictions) + [section for section in api_predictions if section not in fallback_predictions]
         predictions = {
             section: {
