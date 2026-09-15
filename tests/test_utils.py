@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
-from utils.adme_predictor import build_fallback_prediction, normalize_api_prediction
+from utils.adme_predictor import AdmePredictor, build_fallback_prediction, normalize_api_prediction
 from utils.export import export_markdown
 
 
@@ -38,6 +39,19 @@ class AdmeUtilityTests(unittest.TestCase):
         result = normalize_api_prediction(payload)
 
         self.assertEqual(result["absorption"]["bioavailability_score"], 0.88)
+
+    def test_predict_merges_partial_api_response_without_losing_fallback_values(self) -> None:
+        with (
+            patch("utils.adme_predictor.validate_smiles", return_value=(True, "")),
+            patch("utils.adme_predictor.calculate_descriptors", return_value=DESCRIPTORS),
+            patch.object(AdmePredictor, "_call_api", return_value={"absorption": {"bioavailability_score": 0.88}}),
+        ):
+            result = AdmePredictor(api_url="https://example.test").predict("CCO")
+
+        self.assertEqual(result.predictions["absorption"]["bioavailability_score"], 0.88)
+        self.assertIn("human_intestinal_absorption", result.predictions["absorption"])
+        self.assertIn("distribution", result.predictions)
+        self.assertEqual(list(result.predictions)[0], "absorption")
 
     def test_export_markdown_contains_sections(self) -> None:
         predictions = build_fallback_prediction("CCO", DESCRIPTORS)

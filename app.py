@@ -34,6 +34,7 @@ def load_history(path: Path) -> list[dict]:
 def save_history(path: Path, entry: dict) -> None:
     history = load_history(path)
     history.insert(0, entry)
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(history[: settings.max_history_items], indent=2), encoding="utf-8")
 
 
@@ -98,8 +99,12 @@ def main() -> None:
         return
 
     predictor = AdmePredictor()
-    with st.spinner("Running ADME prediction and generating charts..."):
-        result = predictor.predict(smiles)
+    try:
+        with st.spinner("Running ADME prediction and generating charts..."):
+            result = predictor.predict(smiles)
+    except Exception as exc:  # pragma: no cover - Streamlit UI flow
+        st.error(f"Prediction failed: {exc}")
+        return
 
     save_history(
         settings.history_path,

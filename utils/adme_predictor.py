@@ -9,6 +9,8 @@ import requests
 from config import settings
 from utils.molecule_utils import calculate_descriptors, validate_smiles
 
+PREDICTION_SECTIONS = ("absorption", "distribution", "metabolism", "excretion", "toxicity", "drug_likeness")
+
 
 def _clamp(value: float, lower: float = 0.0, upper: float = 1.0) -> float:
     return max(lower, min(upper, value))
@@ -94,7 +96,7 @@ def normalize_api_prediction(payload: dict[str, Any]) -> dict[str, Any]:
         return {}
 
     normalized: dict[str, Any] = {}
-    for section in ("absorption", "distribution", "metabolism", "excretion", "toxicity", "drug_likeness"):
+    for section in PREDICTION_SECTIONS:
         section_data = payload.get(section, {})
         if isinstance(section_data, dict) and section_data:
             normalized[section] = section_data
@@ -146,12 +148,13 @@ class AdmePredictor:
             warnings.append(f"Could not parse ADME-AI API response: {exc}. Descriptor-based fallback predictions were generated instead.")
 
         fallback_predictions = build_fallback_prediction(smiles, descriptors)
+        ordered_sections = list(fallback_predictions) + [section for section in api_predictions if section not in fallback_predictions]
         predictions = {
             section: {
                 **fallback_predictions.get(section, {}),
                 **api_predictions.get(section, {}),
             }
-            for section in set(fallback_predictions) | set(api_predictions)
+            for section in ordered_sections
         }
         source = "ADME-AI API" if api_predictions else "Descriptor-based fallback"
 
