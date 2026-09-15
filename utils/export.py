@@ -6,6 +6,13 @@ from typing import Any
 import pandas as pd
 
 
+def _escape_markdown(value: str) -> str:
+    escaped = value.replace("\\", "\\\\")
+    for char in ("`", "*", "_", "{", "}", "[", "]", "(", ")", "#"):
+        escaped = escaped.replace(char, f"\\{char}")
+    return escaped
+
+
 def flatten_predictions(predictions: dict[str, Any]) -> pd.DataFrame:
     rows: list[dict[str, Any]] = []
     for category, values in predictions.items():
@@ -86,8 +93,8 @@ def export_markdown(smiles: str, descriptors: dict[str, float], predictions: dic
     prediction_table = flatten_predictions(predictions).to_markdown(index=False)
     return (
         f"# ADME Prediction Report\n\n"
-        f"- **SMILES**: `{smiles}`\n"
-        f"- **Prediction source**: {source}\n\n"
+        f"- **SMILES**: `{_escape_markdown(smiles)}`\n"
+        f"- **Prediction source**: {_escape_markdown(source)}\n\n"
         f"## Molecular Descriptors\n\n{descriptor_table}\n\n"
         f"## ADME Predictions\n\n{prediction_table}\n"
     )

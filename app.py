@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import tempfile
 from pathlib import Path
 
 import pandas as pd
@@ -18,6 +20,7 @@ from utils.visualization import (
     build_radar_chart,
 )
 
+LOGGER = logging.getLogger(__name__)
 
 st.set_page_config(page_title=settings.app_name, page_icon="🧪", layout="wide")
 
@@ -35,7 +38,11 @@ def save_history(path: Path, entry: dict) -> None:
     history = load_history(path)
     history.insert(0, entry)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(history[: settings.max_history_items], indent=2), encoding="utf-8")
+    history_payload = json.dumps(history[: settings.max_history_items], indent=2)
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as temp_file:
+        temp_file.write(history_payload)
+        temp_path = Path(temp_file.name)
+    temp_path.replace(path)
 
 
 def render_molecule(smiles: str) -> None:
@@ -103,7 +110,8 @@ def main() -> None:
         with st.spinner("Running ADME prediction and generating charts..."):
             result = predictor.predict(smiles)
     except Exception as exc:  # pragma: no cover - Streamlit UI flow
-        st.error(f"Prediction failed: {exc}")
+        LOGGER.exception("Prediction failed for provided SMILES")
+        st.error("Prediction failed. Please verify the SMILES input and API configuration, then try again.")
         return
 
     save_history(

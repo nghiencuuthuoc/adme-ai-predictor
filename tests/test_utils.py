@@ -66,6 +66,13 @@ class AdmeUtilityTests(unittest.TestCase):
         self.assertIn("## ADME Predictions", report)
         self.assertIn("bioavailability_score", report)
 
+    def test_export_markdown_escapes_user_controlled_fields(self) -> None:
+        predictions = build_fallback_prediction(DESCRIPTORS)
+        report = export_markdown("C*C", DESCRIPTORS, predictions, "API_[test]")
+
+        self.assertIn("`C\\*C`", report)
+        self.assertIn("API\\_\\[test\\]", report)
+
     def test_export_csv_uses_single_normalized_table(self) -> None:
         predictions = build_fallback_prediction(DESCRIPTORS)
         csv_text = export_csv_bytes("CCO", DESCRIPTORS, predictions).decode("utf-8")
