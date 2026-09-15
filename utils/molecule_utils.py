@@ -5,7 +5,7 @@ import io
 from typing import Any
 
 
-def _rdkit_modules() -> tuple[Any, Any, Any, Any]:
+def _rdkit_modules() -> tuple[Any, Any, Any, Any, Any]:
     from rdkit import Chem
     from rdkit.Chem import Crippen, Descriptors, Draw, Lipinski
 
