@@ -60,8 +60,11 @@ class AdmeUtilityTests(unittest.TestCase):
         report = export_markdown("CCO", DESCRIPTORS, predictions, "Descriptor-based fallback")
 
         self.assertIn("# ADME Prediction Report", report)
+        self.assertIn("- **Prediction source**: Descriptor-based fallback", report)
         self.assertIn("## Molecular Descriptors", report)
+        self.assertIn("molecular_weight", report)
         self.assertIn("## ADME Predictions", report)
+        self.assertIn("bioavailability_score", report)
 
     def test_export_csv_uses_single_normalized_table(self) -> None:
         predictions = build_fallback_prediction(DESCRIPTORS)

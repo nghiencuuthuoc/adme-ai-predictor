@@ -27,7 +27,7 @@ def load_history(path: Path) -> list[dict]:
         return []
     try:
         return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, OSError):
         return []
 
 

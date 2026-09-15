@@ -111,5 +111,20 @@ def build_comparison_chart(descriptors: dict[str, float]):
             {"metric": "Rotatable Bonds", "observed": descriptors["rotatable_bonds"], "reference": 10},
         ]
     )
-    melted = frame.melt(id_vars="metric", var_name="series", value_name="value")
-    return px.bar(melted, x="metric", y="value", color="series", barmode="group", title="Property Comparison")
+    frame["observed_ratio"] = frame["observed"] / frame["reference"]
+    frame["reference_ratio"] = 1.0
+    melted = frame.melt(
+        id_vars="metric",
+        value_vars=["observed_ratio", "reference_ratio"],
+        var_name="series",
+        value_name="value",
+    )
+    return px.bar(
+        melted,
+        x="metric",
+        y="value",
+        color="series",
+        barmode="group",
+        title="Property Comparison vs Reference Limit",
+        labels={"value": "Fraction of reference limit", "series": "Series"},
+    )
